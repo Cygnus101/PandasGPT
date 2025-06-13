@@ -3,3 +3,5 @@
 *.pyc
 datasets/
 dataset/
+._*
+
