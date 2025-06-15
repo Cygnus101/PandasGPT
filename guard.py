@@ -172,8 +172,19 @@ def validate_code(code_str: str, df_meta: Dict[str, object], *, allowed_names: S
     # 4. Name validation (unknown globals)
     # ------------------------------------------------------------------
     class NameCollector(ast.NodeVisitor):
-        def visit_Name(self, node: ast.Name) -> None:  # noqa: N802
-            if isinstance(node.ctx, ast.Load) and node.id not in allowed_names and node.id not in visitor.columns:
+        def __init__(self) -> None:
+            self.defined: set[str] = set()
+
+        def visit_Name(self, node: ast.Name) -> None:             # noqa: N802
+            if isinstance(node.ctx, ast.Store):
+                # variable is created/assigned → remember it
+                self.defined.add(node.id)
+            elif (
+                isinstance(node.ctx, ast.Load)
+                and node.id not in allowed_names
+                and node.id not in visitor.columns
+                and node.id not in self.defined          # <-- new check
+            ):
                 issues.append(f"Use of unknown variable '{node.id}'")
 
     NameCollector().visit(tree)

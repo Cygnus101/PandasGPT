@@ -35,7 +35,7 @@ def main() -> None:
     template = load_prompt("prompts/meta_agent.txt")
 
     # 4) Natural‑language question (could be user input)
-    user_query = "What was the average active power consumption in March 2007?"
+    user_query = "Give me plot of each column versus date?"
 
     # 5) Assemble final prompt
     prompt = (
@@ -61,11 +61,12 @@ def main() -> None:
             # 8) Execute code in REPL with access to the DataFrame
             result = run_in_repl(code_sequence, df)
             if result["ok"]:
-                print("Execution passes guard and sandbox:")
+                print("Sandbox trial passed:")
             else:
-                print("Execution error:", result["error"])
+                print("Sandbox trial failed with error:", result["error"])
         except Exception as exc:
             print("Runtime error after guard:\n", exc)
+
     else:
         print("Guard found issues:")
         for issue in verdict["issues"]:
