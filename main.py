@@ -1,9 +1,10 @@
 import pandas as pd
 from utils.preprocess import ucl_dataset_prep
 from utils.prompt import load_prompt
-from meta_agent import generate_code_sequence
+from agents.meta_agent import generate_code_sequence
 from guard import validate_code
 import matplotlib.pyplot as plt
+from sandbox import run_in_repl
 
 # --------------------------------------------------
 # helpers
@@ -55,19 +56,22 @@ def main() -> None:
     verdict = validate_code(code_sequence, df_meta)
 
     if verdict["ok"]:
-        print("\u2705 Guard passed – code is safe to execute.")
+        print("Guard passed – code is safe to execute.")
         try:
-            # Provide df, pd, plt in local namespace for the snippet
-            
-            local_ns = {"df": df, "pd": pd, "plt": plt}
-            exec(code_sequence, {}, local_ns)  # result may be assigned within snippet
+            # 8) Execute code in REPL with access to the DataFrame
+            result = run_in_repl(code_sequence, df)
+            if result["ok"]:
+                print("Execution passes guard and sandbox:")
+            else:
+                print("Execution error:", result["error"])
         except Exception as exc:
             print("Runtime error after guard:\n", exc)
     else:
-        print("\u274C Guard found issues:")
+        print("Guard found issues:")
         for issue in verdict["issues"]:
             print(" •", issue)
 
 
 if __name__ == "__main__":
     main()
+
