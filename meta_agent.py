@@ -24,7 +24,7 @@ def generate_code_sequence(prompt):
     raw = llm.invoke(prompt).content.strip()
     return raw
 
-print(generate_code_sequence("What was the average active power consumption in March 2007?"))
+# print(generate_code_sequence("What was the average active power consumption in March 2007?"))
 
 
 
