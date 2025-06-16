@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import os
 import json
 import pandas as pd
+from sandbox import run_in_repl
+from guard import validate_code
 
 
 load_dotenv()
@@ -11,6 +13,24 @@ from utils.prompt import load_prompt
 from utils.preprocess import ucl_dataset_prep
 
 prompt_path = "prompts/meta_agent.txt"
+
+def build_repair_prompt(base_prompt: str,
+                        bad_code: str,
+                        error_type: str,
+                        error_msg: str) -> str:
+    repair_block = (
+        "\n\n---\n"
+        f"Previous attempt failed on **{error_type}**:\n"
+        "```python\n" + bad_code + "\n```\n"
+        "Error message:\n"
+        "```\n" + error_msg.strip() + "\n```\n\n"
+        "Please rewrite the code so it works, "
+        "assign the final answer to _ , "
+        "and return only the Python code."
+    )
+    return base_prompt + repair_block
+
+
 
 def generate_code_sequence(prompt):
     # Initialize the Google Generative AI client
@@ -25,7 +45,42 @@ def generate_code_sequence(prompt):
     raw = llm.invoke(prompt).content.strip()
     return raw
 
-# print(generate_code_sequence("What was the average active power consumption in March 2007?"))
+
+
+MAX_TRIES = 3
+
+def try_generate_and_execute(prompt_base: str, df):
+    code = generate_code_sequence(prompt_base)         # first attempt
+    for attempt in range(1, MAX_TRIES + 1):
+        print(f"\nAttempt {attempt}:\n{code}")
+
+        # ---------- static guard ----------
+        verdict = validate_code(code, {"columns": df.columns})
+        if not verdict["ok"]:
+            error_type = "guard"
+            error_msg  = "; ".join(verdict["issues"])
+        else:
+            # ---------- sandbox ----------
+            run = run_in_repl(code, df)               # full df
+            if run["ok"]:
+                return {"ok": True, "code": code, "result": run["result"]}
+            error_type = "sandbox"
+            error_msg  = run["error"]
+
+        # ---------- build repair prompt ----------
+        repair_prompt = build_repair_prompt(
+            prompt_base, code, error_type, error_msg
+        )
+        code = generate_code_sequence(repair_prompt)
+
+    # exhausted retries
+    return {
+        "ok": False,
+        "code": code,
+        "error": f"Failed after {MAX_TRIES} tries ({error_type}): {error_msg}"
+    }
+
+
 
 
 

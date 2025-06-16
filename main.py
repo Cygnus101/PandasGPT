@@ -1,7 +1,7 @@
 import pandas as pd
 from utils.preprocess import ucl_dataset_prep
 from utils.prompt import load_prompt
-from agents.meta_agent import generate_code_sequence
+from agents.meta_agent import generate_code_sequence, try_generate_and_execute
 from guard import validate_code
 import matplotlib.pyplot as plt
 from sandbox import run_in_repl
@@ -35,7 +35,7 @@ def main() -> None:
     template = load_prompt("prompts/meta_agent.txt")
 
     # 4) Natural‑language question (could be user input)
-    user_query = "Give me plot of each column versus date?"
+    user_query = "Give me average of first 2 columns?"
 
     # 5) Assemble final prompt
     prompt = (
@@ -44,33 +44,17 @@ def main() -> None:
         .replace("{{USER_QUERY}}", user_query)
     )
 
-    # 6) Generate code sequence via meta‑agent
-    code_sequence = generate_code_sequence(prompt)
-    print("\nGenerated code:\n", code_sequence)
+    out = try_generate_and_execute(prompt, df)
 
-    # 7) Run static guard validation
-    df_meta = {
-        "columns": df.columns.tolist(),
-        "dtypes": {c: str(t) for c, t in df.dtypes.items()},
-    }
-    verdict = validate_code(code_sequence, df_meta)
-
-    if verdict["ok"]:
-        print("Guard passed – code is safe to execute.")
-        try:
-            # 8) Execute code in REPL with access to the DataFrame
-            result = run_in_repl(code_sequence, df)
-            if result["ok"]:
-                print("Sandbox trial passed:")
-            else:
-                print("Sandbox trial failed with error:", result["error"])
-        except Exception as exc:
-            print("Runtime error after guard:\n", exc)
-
+    if out["ok"]:
+        print(" Final code:\n", out["code"])
+        # print("\nResult:", out["result"])
+        
     else:
-        print("Guard found issues:")
-        for issue in verdict["issues"]:
-            print(" •", issue)
+        print(out["error"])
+        choice = input("Keep this partial code? (y/n) ")
+        if choice.lower().startswith("y"):
+            print(out["code"])
 
 
 if __name__ == "__main__":
