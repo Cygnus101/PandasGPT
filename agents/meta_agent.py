@@ -5,12 +5,8 @@ import json
 import pandas as pd
 from sandbox import run_in_repl
 from guard import validate_code
-
-
-load_dotenv()
-
 from utils.prompt import load_prompt
-from utils.preprocess import ucl_dataset_prep
+load_dotenv()
 
 prompt_path = "prompts/meta_agent.txt"
 

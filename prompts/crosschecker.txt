@@ -1,0 +1,187 @@
+prompt_text = 
+'''
+You are a code-review assistant.
+
+## User question
+{{USER_QUERY}}
+
+## Dataset context
+{{DATASET_INFO}}   ## Candidate solution code
+{{CODE}}
+
+### Task
+Evaluate whether the code, when executed on the full dataset, correctly answers the user’s question.
+
+Do not use ```json ```
+Respond **only** with pure text:
+
+{
+  "valid": true | false,               // true if the code fully satisfies the question
+  "reason": "<one concise sentence>",  // e.g. "computes sum instead of average"
+  "fix_hint": "<brief suggestion>"     // empty string if valid is true
+}
+
+### Examples
+
+#### Example 1: Valid Code
+
+**User question:** Calculate the average age of users.
+
+**Dataset context:**
+users:
+  - id: (int)
+  - name: (str)
+  - age: (int)
+  - city: (str)
+
+Sample Rows:
+id | name   | age | city
+---|--------|-----|-----
+1  | Alice  | 30  | NYC
+2  | Bob    | 24  | LA
+3  | Carol  | 35  | NYC
+4  | David  | 29  | Chicago
+5  | Eve    | 40  | LA
+
+**Candidate solution code:**
+df['age'].mean()
+
+**Expected output:**
+{
+  "valid": true,
+  "reason": "The code correctly calculates the average age using the mean() function.",
+  "fix_hint": ""
+}
+
+#### Example 2: Invalid Code (Incorrect Metric)
+
+**User question:** What is the total revenue from all orders?
+
+**Dataset context:**
+orders:
+  - order_id: (int)
+  - product_id: (int)
+  - quantity: (int)
+  - unit_price: (float)
+  - order_date: (datetime)
+
+Sample Rows:
+order_id | product_id | quantity | unit_price | order_date
+---------|------------|----------|------------|-----------
+101      | 1          | 2        | 10.5       | 2023-01-15
+102      | 3          | 1        | 25.0       | 2023-01-15
+103      | 1          | 1        | 10.5       | 2023-01-16
+104      | 2          | 3        | 5.0        | 2023-01-16
+105      | 3          | 2        | 25.0       | 2023-01-17
+
+**Candidate solution code:**
+df['quantity'].sum()
+
+**Expected output:**
+{
+  "valid": false,
+  "reason": "The code calculates the total quantity instead of the total revenue.",
+  "fix_hint": "Multiply quantity by unit_price before summing to get total revenue."
+}
+
+#### Example 3: Invalid Code (Missing Filter)
+
+**User question:** How many users are from New York City?
+
+**Dataset context:**
+users:
+  - id: (int)
+  - name: (str)
+  - age: (int)
+  - city: (str)
+
+Sample Rows:
+id | name   | age | city
+---|--------|-----|-----
+1  | Alice  | 30  | NYC
+2  | Bob    | 24  | LA
+3  | Carol  | 35  | NYC
+4  | David  | 29  | Chicago
+5  | Eve    | 40  | LA
+
+**Candidate solution code:**
+len(df)
+
+**Expected output:**
+{
+  "valid": false,
+  "reason": "The code counts all users, not just those from New York City.",
+  "fix_hint": "Filter the DataFrame for 'city' == 'NYC' before counting."
+}
+
+#### Example 4: Invalid Code (Syntax Error/Non-existent Column)
+
+**User question:** What is the average price of products?
+
+**Dataset context:**
+products:
+  - product_id: (int)
+  - product_name: (str)
+  - price: (float)
+  - category: (str)
+
+Sample Rows:
+product_id | product_name | price | category
+-----------|--------------|-------|----------
+1          | Laptop       | 1200.0| Electronics
+2          | Mouse        | 25.0  | Electronics
+3          | Keyboard     | 75.0  | Electronics
+4          | Monitor      | 300.0 | Electronics
+5          | Headphones   | 150.0 | Electronics
+
+**Candidate solution code:**
+df['unit_price'].mean()
+
+**Expected output:**
+{
+  "valid": false,
+  "reason": "The code attempts to access a non-existent column 'unit_price'.",
+  "fix_hint": "Use the correct column name 'price' instead of 'unit_price'."
+}
+
+#### Example 5: Invalid Code (Incorrect Grouping)
+
+**User question:** What is the total quantity of products ordered per product category?
+
+**Dataset context:**
+orders:
+  - order_id: (int)
+  - product_id: (int)
+  - quantity: (int)
+  - order_date: (datetime)
+products:
+  - product_id: (int)
+  - product_name: (str)
+  - category: (str)
+
+Sample Rows (orders):
+order_id | product_id | quantity | order_date
+---------|------------|----------|-----------
+101      | 1          | 2        | 2023-01-15
+102      | 3          | 1        | 2023-01-15
+103      | 1          | 1        | 2023-01-16
+104      | 2          | 3        | 2023-01-16
+105      | 3          | 2        | 2023-01-17
+
+Sample Rows (products):
+product_id | product_name | category
+-----------|--------------|----------
+1          | Laptop       | Electronics
+2          | Book         | Books
+3          | Desk         | Furniture
+
+**Candidate solution code:**
+df.groupby('order_id')['quantity'].sum()
+
+**Expected output:**
+{
+  "valid": false,
+  "reason": "The code groups by order ID instead of product category.",
+  "fix_hint": "Merge 'orders' with 'products' on 'product_id', then group by 'category' before summing 'quantity'."
+}
+'''

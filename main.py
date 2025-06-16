@@ -5,7 +5,7 @@ from agents.meta_agent import generate_code_sequence, try_generate_and_execute
 from guard import validate_code
 import matplotlib.pyplot as plt
 from sandbox import run_in_repl
-
+from agents.crosschecker import cross_check
 # --------------------------------------------------
 # helpers
 # --------------------------------------------------
@@ -47,10 +47,27 @@ def main() -> None:
     out = try_generate_and_execute(prompt, df)
 
     if out["ok"]:
-        print(" Final code:\n", out["code"])
-        # print("\nResult:", out["result"])
-        
+        # -----------------------------------------------
+        #  NEW ︱ LLM cross-checker sanity pass
+        # -----------------------------------------------
+        verdict = cross_check(
+            user_query,          # original NL question
+            ctx,                 # dataset schema + sample rows
+            out["code"],         # candidate code that ran successfully
+        )
+
+        if verdict["valid"]:
+            print("Cross-check passed.")
+            print("Final code:\n", out["code"])
+            print("Result:", out["result"])
+        else:
+            print("Cross-check flagged an issue:")
+            print("Reason :", verdict["reason"])
+            print("Hint   :", verdict["fix_hint"])
+            # You could launch one more repair cycle here if you wish.
+
     else:
+        # self-healing failed after 3 tries
         print(out["error"])
         choice = input("Keep this partial code? (y/n) ")
         if choice.lower().startswith("y"):
