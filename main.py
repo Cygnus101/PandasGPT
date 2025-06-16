@@ -1,79 +1,66 @@
+import argparse
+import os
 import pandas as pd
+import matplotlib       # suppress macOS GUI crashes
+matplotlib.use("Agg")
+
 from utils.preprocess import ucl_dataset_prep
 from utils.prompt import load_prompt
-from agents.meta_agent import generate_code_sequence, try_generate_and_execute
-from guard import validate_code
-import matplotlib.pyplot as plt
-from sandbox import run_in_repl
+from agents.meta_agent import try_generate_and_execute
 from agents.crosschecker import cross_check
-# --------------------------------------------------
-# helpers
-# --------------------------------------------------
+# guard, run_in_repl, etc. are imported inside the meta / sandbox layer
+
+# ---------- helpers -------------------------------------------------
 
 def dataframe_context(df: pd.DataFrame, n_rows: int = 5) -> str:
-    """Return column names + dtypes and a small sample as plain text."""
     schema = "\n".join(f"- **{c}**: {t}" for c, t in df.dtypes.items())
     sample = df.head(n_rows).to_markdown(index=False)
-    return (
-        "### Dataset schema\n" + schema + "\n\n" +
-        "### Sample rows\n" + sample + "\n"
-    )
+    return f"### Dataset schema\n{schema}\n\n### Sample rows\n{sample}\n"
 
+def load_dataframe(path: str) -> pd.DataFrame:
+    if path.endswith(".txt"):
+        return ucl_dataset_prep(path)
+    elif path.endswith((".csv", ".parquet", ".feather")):
+        return pd.read_csv(path) if path.endswith(".csv") else pd.read_parquet(path)
+    else:
+        raise ValueError("Unsupported file type: " + os.path.basename(path))
 
-# --------------------------------------------------
-# main workflow
-# --------------------------------------------------
+# ---------- main ----------------------------------------------------
 
 def main() -> None:
-    # 1) Load & preprocess dataset
-    df = ucl_dataset_prep("dataset/household_power_consumption.txt")
+    parser = argparse.ArgumentParser(description="PandasGPT pipeline")
+    parser.add_argument("--data", required=True,
+                        help="Path to dataset file (txt/csv/parquet)")
+    parser.add_argument("--query", required=True,
+                        help="Natural-language question for the LLM")
+    args = parser.parse_args()
 
-    # 2) Build dataset context block for the LLM
+    # 1 ·  Load dataset
+    df = load_dataframe(args.data)
+
+    # 2 ·  Build prompt context
     ctx = dataframe_context(df)
-
-    # 3) Load meta‑agent prompt template
     template = load_prompt("prompts/meta_agent.txt")
+    prompt   = template.replace("{{DATASET_INFO}}", ctx) \
+                       .replace("{{USER_QUERY}}", args.query)
 
-    # 4) Natural‑language question (could be user input)
-    user_query = "Give me average of first 2 columns?"
-
-    # 5) Assemble final prompt
-    prompt = (
-        template
-        .replace("{{DATASET_INFO}}", ctx)
-        .replace("{{USER_QUERY}}", user_query)
-    )
-
+    # 3 ·  Generate → self-heal → sandbox
     out = try_generate_and_execute(prompt, df)
 
+    # 4 ·  Cross-check if code ran
     if out["ok"]:
-        # -----------------------------------------------
-        #  NEW ︱ LLM cross-checker sanity pass
-        # -----------------------------------------------
-        verdict = cross_check(
-            user_query,          # original NL question
-            ctx,                 # dataset schema + sample rows
-            out["code"],         # candidate code that ran successfully
-        )
-
+        verdict = cross_check(args.query, ctx, out["code"])
         if verdict["valid"]:
-            print("Cross-check passed.")
-            print("Final code:\n", out["code"])
-            print("Result:", out["result"])
+            print("Answer produced by validated code:")
+            print(out["result"])
         else:
-            print("Cross-check flagged an issue:")
+            print("Cross-checker doubts the answer.")
             print("Reason :", verdict["reason"])
             print("Hint   :", verdict["fix_hint"])
-            # You could launch one more repair cycle here if you wish.
-
+            print("\nLast code attempt:\n", out["code"])
     else:
-        # self-healing failed after 3 tries
-        print(out["error"])
-        choice = input("Keep this partial code? (y/n) ")
-        if choice.lower().startswith("y"):
-            print(out["code"])
-
+        print("Pipeline failed after retries:", out["error"])
+        print("\nLast code attempt:\n", out["code"])
 
 if __name__ == "__main__":
     main()
-
