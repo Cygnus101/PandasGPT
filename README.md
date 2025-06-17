@@ -50,8 +50,6 @@ echo "GOOGLE_API_KEY=<your-key>" > .env
 #    Safeframe-AI expects the data file inside a local  ./dataset  directory.
 #    Create it (if it doesn't exist) and copy or download your file there.
 mkdir -p dataset
-# Example: the UCI household power text file is already included; for Titanic:
-# kaggle competitions download -c titanic -p dataset && unzip dataset/titanic.zip -d dataset
 
 # 5. Run a sample query
 python3 main.py --data dataset/household_power_consumption.txt \
