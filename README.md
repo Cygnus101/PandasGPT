@@ -24,7 +24,7 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 | **Cross-checker** | ✓ | Second LLM pass judges semantic correctness; can trigger up to 2 extra repair attempts. |
 | **CLI (`main.py`)** | ✓ | ```python3 main.py --data <file> --query "<question>"``` works for `.txt`, `.csv`, `.parquet`, `.feather`. |
 | **Dataset helpers** | ✓ | `ucl_dataset_prep` (UCI power data) + generic loader. |
-| **Evaluation scaffold** | ✓ | 5 NL queries (UCI Household Energy) for quick benchmarking. |
+| **Evaluation scaffold** | ✓ | 15 NL queries (UCI Household Energy) for quick benchmarking. |
 | **Docs** | ✓ | README, notebook, prompt templates, guard comments, and usage examples. |
 
 ---
