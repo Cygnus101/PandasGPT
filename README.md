@@ -20,8 +20,8 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 | **Meta-agent** | ✓ | Converts NL question → pandas/Matplotlib/Seaborn code|
 | **Static guard (`guard.py`)** | ✓ | AST-based syntax & safety checks, blocks dangerous imports/calls, validates column names, **now permits columns created in-snippet**. |
 | **Sandbox (`run_in_repl`)** | ✓ | Python-AST REPL in a background thread, 2-second timeout, `matplotlib` switched to `Agg` to avoid macOS GUI crashes. |
-| **Self-healing loop** | ✓ | Guard → Sandbox; on error sends a repair prompt (incl. error text) to the LLM; retries ≤ 3. |
-| **Cross-checker** | ✓ | Second LLM pass judges semantic correctness; can trigger up to 2 extra repair attempts. |
+| **Self-healing loop** | ✓ | Guard → Sandbox; on error sends a repair prompt (incl. error text) to the Meta-agent which rewrites the code ; retries ≤ 3. |
+| **Cross-checker** | ✓ | Second LLM pass judges semantic correctness; can trigger up to 2 extra repair attempts. Afterwords, one final call to cross-verify |
 | **CLI (`main.py`)** | ✓ | ```python3 main.py --data <file> --query "<question>"``` works for `.txt`, `.csv`, `.parquet`, `.feather`. |
 | **Dataset helpers** | ✓ | `ucl_dataset_prep` (UCI power data) + generic loader. |
 | **Evaluation scaffold** | ✓ | 15 NL queries (UCI Household Energy) for quick benchmarking. |
