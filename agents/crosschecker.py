@@ -9,6 +9,7 @@ from utils.prompt import load_prompt
 load_dotenv()
 import json
 from langchain_google_genai import ChatGoogleGenerativeAI
+from agents.meta_agent import try_generate_and_execute, build_repair_prompt
 
 
 
@@ -70,6 +71,42 @@ def build_cross_prompt(user_query: str,
         "Do not output any additional text outside the JSON."
     )
 
+CC_MAX = 2   # cross-checker retry budget
+
+def generate_guard_sandbox(prompt_base: str, df):
+    """Your existing try_generate_and_execute but returning *always*."""
+    out = try_generate_and_execute(prompt_base, df)
+    return out  # may be ok or failed
+
+def repair_with_critic(prompt_base: str, df, ctx, user_q):
+    out = generate_guard_sandbox(prompt_base, df)
+    if not out["ok"]:
+        return out   # guard/sandbox already exhausted
+
+    # ---- cross-checker loop ----
+    code   = out["code"]
+    result = out["result"]
+    for i in range(CC_MAX):
+        verdict = cross_check(user_q, ctx, code)
+        if verdict["valid"]:
+            return {"ok": True, "code": code, "result": result}
+
+        # critic says it's wrong → repair
+        critic_prompt = build_repair_prompt(
+            prompt_base, code, "critic", verdict["reason"]
+        )
+        out = generate_guard_sandbox(critic_prompt, df)
+        if not out["ok"]:
+            return out   # failed during new guard/sandbox
+        code, result = out["code"], out["result"]
+
+    # critic still unhappy
+    return {
+        "ok": False,
+        "code": code,
+        "error": f"Critic not satisfied after {CC_MAX} tries: {verdict['reason']}"
+    }
+
 def cross_check(user_q: str, ctx: str, code: str, result_snippet: str | None = None):
     prompt = build_cross_prompt(user_q, ctx, code, result_snippet or "")
     response = llm.invoke(prompt)          # returns LangChain Message
@@ -82,6 +119,7 @@ def cross_check(user_q: str, ctx: str, code: str, result_snippet: str | None = N
     
     if text.lower().startswith("json"):
         text = text[len("json"):].strip()  
+
     print(text)
     try:
         verdict = json.loads(text)

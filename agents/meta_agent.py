@@ -14,18 +14,18 @@ def build_repair_prompt(base_prompt: str,
                         bad_code: str,
                         error_type: str,
                         error_msg: str) -> str:
-    repair_block = (
+    # remove any fences from bad_code / error_msg first if you like
+    block = (
         "\n\n---\n"
         f"Previous attempt failed on **{error_type}**:\n"
-        "```python\n" + bad_code + "\n```\n"
-        "Error message:\n"
-        "```\n" + error_msg.strip() + "\n```\n\n"
+        f"{bad_code}\n\n"
+        "Error message / critic feedback:\n"
+        f"{error_msg.strip()}\n\n"
         "Please rewrite the code so it works, "
         "assign the final answer to _ , "
         "and return only the Python code."
     )
-    return base_prompt + repair_block
-
+    return base_prompt + block
 
 
 def generate_code_sequence(prompt):
@@ -39,6 +39,11 @@ def generate_code_sequence(prompt):
     )
 
     raw = llm.invoke(prompt).content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1].strip()
+    
+    if raw.lower().startswith("python"):
+        raw = raw[len("python"):].strip()  
     return raw
 
 
