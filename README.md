@@ -13,7 +13,7 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 
 ---
 
-## What’s done so far 🚀  
+## What’s done so far :  
 
 | Layer | Status | Highlights |
 |-------|--------|------------|
