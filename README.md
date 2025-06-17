@@ -35,7 +35,7 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 # create & activate venv
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt   # pandas, matplotlib, langchain, google-genai, …
+pip install -r requirements.txt   # pandas, matplotlib, langchain, pandas, …
 
 # set your Gemini API key
 echo "GOOGLE_API_KEY=<your key>" > .env
