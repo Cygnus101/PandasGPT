@@ -31,15 +31,28 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 
 ### Quick start
 
-```bash
-# create & activate venv
+```bash# 0. Clone the repository
+git clone https://github.com/Cygnus101/Safeframe-AI.git
+cd Safeframe-AI
+
+# 1. Create & activate a virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt   # pandas, matplotlib, langchain, pandas, …
 
-# set your Gemini API key
-echo "GOOGLE_API_KEY=<your key>" > .env
+# 2. Install Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt     # pandas, matplotlib, langchain, google-genai …
 
-# run a sample query
+# 3. Add your Gemini (or other) API key
+echo "GOOGLE_API_KEY=<your-key>" > .env
+
+# 4. Place your dataset
+#    Safeframe-AI expects the data file inside a local  ./dataset  directory.
+#    Create it (if it doesn't exist) and copy or download your file there.
+mkdir -p dataset
+# Example: the UCI household power text file is already included; for Titanic:
+# kaggle competitions download -c titanic -p dataset && unzip dataset/titanic.zip -d dataset
+
+# 5. Run a sample query
 python3 main.py --data dataset/household_power_consumption.txt \
                 --query "What was the average active power consumption in March 2007?"
