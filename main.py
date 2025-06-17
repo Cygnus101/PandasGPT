@@ -53,24 +53,24 @@ def main() -> None:
     out = repair_with_critic(base_prompt, df, ctx, args.query)
 
     # 4. Handle outcome
-    # if not out["ok"]:
-    #     print("\n Pipeline failed:", out["error"])
-    #     print("\nLast code attempt:\n", out["code"])
-    #     return
+    if not out["ok"]:
+        print("\n Pipeline failed:", out["error"])
+        print("\nLast code attempt:\n", out["code"])
+        return
 
     # # (optional extra critic pass; kept for completeness)
-    # verdict = cross_check(args.query, ctx, out["code"])
-    # if not verdict["valid"]:
-    #     print("\n  Cross-checker still doubts the answer:")
-    #     print("Reason :", verdict["reason"])
-    #     print("Hint   :", verdict["fix_hint"])
-    #     print("\nLast code attempt:\n", out["code"])
-    #     return
+    verdict = cross_check(args.query, ctx, out["code"])
+    if not verdict["valid"]:
+        print("\n  Cross-checker still doubts the answer:")
+        print("Reason :", verdict["reason"])
+        print("Hint   :", verdict["fix_hint"])
+        print("\nLast code attempt:\n", out["code"])
+        return
 
     # # 5. Success!
-    # print("\n Answer (validated):")
+    print("\n Answer (validated):")
 
-    print(out["result"])
+    # print(out["result"])
     print("\nGenerated code:\n", out["code"])
 
 

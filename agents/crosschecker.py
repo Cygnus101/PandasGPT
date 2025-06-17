@@ -71,7 +71,7 @@ def build_cross_prompt(user_query: str,
         "Do not output any additional text outside the JSON."
     )
 
-CC_MAX = 2   # cross-checker retry budget
+CC_MAX = 3   # cross-checker retry budget
 
 def generate_guard_sandbox(prompt_base: str, df):
     """Your existing try_generate_and_execute but returning *always*."""

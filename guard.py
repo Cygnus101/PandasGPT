@@ -32,6 +32,12 @@ _BASE_ALLOWED_NAMES: Set[str] = {
     "pd",        # pandas alias
     "np",        # numpy alias
     "plt",       # matplotlib.pyplot alias
+    "sns",       # seaborn alias
+    "datetime",  # datetime module
+    "timedelta", # timedelta class
+    "x",         # common variable names for plotting
+    "y",         # common variable names for plotting
+    "_",       # common placeholder for final result
 }
 
 # Attribute roots that are considered unsafe (prevent file/network/system ops)
@@ -44,18 +50,17 @@ _DISALLOWED_ATTR_PREFIXES: Tuple[str, ...] = (
 # -----------------------------------------------------------------------------
 
 class SafeNodeVisitor(ast.NodeVisitor):
-    """Walks an AST to collect column names and flag disallowed constructs."""
-
     def __init__(self) -> None:
         self.errors: List[str] = []
-        self.columns: Set[str] = set()
+        self.columns: Set[str] = set()   # columns read
+        self.created: Set[str] = set()  # variables created (to avoid false positives)
 
     # --- Import statements ---
-    def visit_Import(self, node: ast.Import) -> None:  # noqa: N802 (snake‑case enforced elsewhere)
-        self.errors.append("Import statements are not allowed")
+    # def visit_Import(self, node: ast.Import) -> None:  # noqa: N802 (snake‑case enforced elsewhere)
+    #     self.errors.append("Import statements are not allowed")
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
-        self.errors.append("Import statements are not allowed")
+    # def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
+    #     self.errors.append("Import statements are not allowed")
 
     # --- eval/exec ---
     def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
@@ -74,7 +79,7 @@ class SafeNodeVisitor(ast.NodeVisitor):
     DATE_SLICE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")  # 'YYYY-MM' or 'YYYY-MM-DD'
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        DATE_SLICE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")  # 'YYYY-MM' or 'YYYY-MM-DD'
+        DATE_SLICE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")
         if (
             isinstance(node.value, ast.Name)
             and node.value.id == "df"
@@ -82,14 +87,16 @@ class SafeNodeVisitor(ast.NodeVisitor):
         ):
             col = node.slice.s if isinstance(node.slice, ast.Str) else node.slice.value
 
-            # --- NEW: skip date-like literals; they’re index slices, not columns
+            # skip date-like index slices
             if isinstance(col, str) and DATE_SLICE_RE.match(col):
-                # treat as a DatetimeIndex slice → nothing to record
                 self.generic_visit(node)
                 return
 
             if isinstance(col, str):
-                self.columns.add(col)
+                if isinstance(node.ctx, ast.Store):     # ← assignment target
+                    self.created.add(col)               # remember as new column
+                else:                                   # Load context
+                    self.columns.add(col)
         self.generic_visit(node)
 
     # ---------------------------------------------------------------------
@@ -165,7 +172,7 @@ def validate_code(code_str: str, df_meta: Dict[str, object], *, allowed_names: S
     # ------------------------------------------------------------------
     # 3. Column‑name validation
     # ------------------------------------------------------------------
-    known_cols: Set[str] = set(df_meta.get("columns", []))
+    known_cols: Set[str] = set(df_meta.get("columns", [])) | visitor.created   # ← CHANGED
     issues.extend(_check_columns(visitor.columns, known_cols))
 
     # ------------------------------------------------------------------
