@@ -23,8 +23,8 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 | **Self-healing loop** | ✓ | Guard → Sandbox; on error sends a repair prompt (incl. error text) to the Meta-agent which rewrites the code ; retries ≤ 3. |
 | **Cross-checker** | ✓ | Second LLM pass judges semantic correctness; can trigger up to 2 extra repair attempts. Afterwords, one final call to cross-verify |
 | **CLI (`main.py`)** | ✓ | ```python3 main.py --data <file> --query "<question>"``` works for `.txt`, `.csv`, `.parquet`, `.feather`. |
-| **Dataset helpers** | ✓ | `uci_dataset_prep` (UCI power data) + generic loader. |
-| **Evaluation scaffold** | ✓ | 15 NL queries (UCI Household Energy) for quick benchmarking. |
+| **Dataset helpers** | ✓ | `uci_dataset_prep` (UCI power data from txt loader) + generic loader. |
+| **Evaluation scaffold** | ✓ | 30 NL queries (UCI Household Energy and Kaggle Titanic Dataset) for quick benchmarking. |
 | **Docs** | ✓ | README, notebook, prompt templates, guard comments, and usage examples. |
 
 ---
