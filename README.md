@@ -31,26 +31,29 @@ Gemini 2.0 Flash (via `langchain_google_genai`)
 
 ### Quick start
 
-```bash# 0. Clone the repository
+```bash# 
+# 0. Clone the repository
 git clone https://github.com/Cygnus101/Safeframe-AI.git
 cd Safeframe-AI
 
-# 1. Create & activate a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+# ── Option A · one-liner setup ─────────────────────────────────────────
+# (recreates .venv, activates it, installs requirements)
+. ./setup_env.sh          #  ← the leading dot means “source”
 
-# 2. Install Python dependencies
-pip install --upgrade pip
-pip install -r requirements.txt     # pandas, matplotlib, langchain, google-genai …
+# ── Option B · manual setup (if you prefer) ────────────────────────────
+# python3 -m venv .venv
+# source .venv/bin/activate
+# pip install --upgrade pip
+# pip install -r requirements.txt
 
-# 3. Add your Gemini (or other) API key
-echo "GOOGLE_API_KEY=<your-key>" > .env
+# 1. Add your Gemini (or other) API key
+echo "GOOGLE_API_KEY=<your-key>" > .env   # replace <your-key>
 
-# 4. Place your dataset
-#    Safeframe-AI expects the data file inside a local  ./dataset  directory.
-#    Create it (if it doesn't exist) and copy or download your file there.
+# 2. Place your dataset
 mkdir -p dataset
+# copy or download any CSV/Parquet there, e.g.:
+# cp /path/to/household_power_consumption.txt dataset/
 
-# 5. Run a sample query
+# 3. Run a sample query
 python3 main.py --data dataset/household_power_consumption.txt \
                 --query "What was the average active power consumption in March 2007?"
