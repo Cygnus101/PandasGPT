@@ -7,7 +7,7 @@ A safety-first, self-healing agent that turns reliably turns natural-language da
 ## Author  
 Rajath Rajesh
 
-## Large-Language Model  
+## LLM Used 
 Gemini 2.0 Flash (via `langchain_google_genai`)  
 *(easily swappable for GroqCloud, OpenAI, etc.)*
 
