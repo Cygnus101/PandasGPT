@@ -23,6 +23,8 @@ def load_dataframe(path: str) -> pd.DataFrame:
         return ucl_dataset_prep(path)
     if path.endswith(".csv"):
         return pd.read_csv(path)
+    if path.endswith(".xlsx"):
+        return pd.read_excel(path)
     if path.endswith(".parquet"):
         return pd.read_parquet(path)
     if path.endswith(".feather"):
