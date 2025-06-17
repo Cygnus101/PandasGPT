@@ -1,6 +1,6 @@
 # Safeframe-AI
 
-A safety-first, self-healing agent that turns natural-language data-analysis questions into battle-tested **pandas** code.
+A safety-first, self-healing agent that turns reliably turns natural-language data-analysis questions into **pandas** code.
 
 ---
 
